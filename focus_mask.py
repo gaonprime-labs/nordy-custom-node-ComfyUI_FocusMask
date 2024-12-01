@@ -24,11 +24,27 @@ class FocusMaskExtractor:
         if isinstance(image, torch.Tensor):
             # Ensure image is on CPU and convert to numpy
             image = image.cpu().numpy()
-            # Convert from BCHW to HWC format and scale to 0-255
-            image = (image[0].transpose(1, 2, 0) * 255).astype(np.uint8)
+            
+            # Ensure we're working with the right dimensions
+            if image.ndim == 4:  # BCHW format
+                image = image[0]  # Remove batch dimension
+            if image.shape[0] in [1, 3]:  # CHW format
+                image = np.transpose(image, (1, 2, 0))  # Convert to HWC
+            
+            # Scale to 0-255 range
+            image = (image * 255).astype(np.uint8)
 
-        # Convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.shape[2] == 3 else image
+        # Convert to grayscale if the image has 3 channels
+        if len(image.shape) == 3 and image.shape[2] == 3:
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        elif len(image.shape) == 3 and image.shape[2] == 1:
+            gray = image[:, :, 0]
+        else:
+            gray = image
+
+        # Ensure gray is 2D
+        if gray.ndim != 2:
+            raise ValueError(f"Expected 2D grayscale image, got shape {gray.shape}")
 
         if method == "laplacian":
             # Laplacian variance method
@@ -50,14 +66,21 @@ class FocusMaskExtractor:
 
         # Apply Gaussian blur for smoothing
         if blur_size > 0:
+            # Ensure blur_size is odd
+            blur_size = blur_size if blur_size % 2 == 1 else blur_size + 1
             focus_map = cv2.GaussianBlur(focus_map, (blur_size, blur_size), 0)
 
         # Normalize to 0-1 range
-        focus_map = (focus_map - focus_map.min()) / (focus_map.max() - focus_map.min() + 1e-8)
+        focus_map_min = focus_map.min()
+        focus_map_max = focus_map.max()
+        if focus_map_max - focus_map_min > 1e-8:
+            focus_map = (focus_map - focus_map_min) / (focus_map_max - focus_map_min)
+        else:
+            focus_map = np.zeros_like(focus_map)
 
         # Convert back to torch tensor format for ComfyUI
         focus_map = torch.from_numpy(focus_map).float()
-        # Add batch and channel dimensions
+        # Add batch and channel dimensions (BCHW format)
         focus_map = focus_map.unsqueeze(0).unsqueeze(0)
 
         return (focus_map,)
