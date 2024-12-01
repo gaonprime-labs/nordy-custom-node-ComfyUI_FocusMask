@@ -20,25 +20,20 @@ class FocusMaskExtractor:
     OUTPUT_NODE = False
 
     def extract_focus_mask(self, image, method="laplacian", blur_size=9):
-        # Convert from ComfyUI image format (torch tensor) to cv2 format
+        # Convert from ComfyUI image format (torch tensor) to numpy
         if isinstance(image, torch.Tensor):
             # Ensure image is on CPU and convert to numpy
             image = image.cpu().numpy()
-            # Convert from BCHW to HWC format
-            image = image[0].transpose(1, 2, 0)
-            # Scale from [0,1] to [0,255]
-            image = (image * 255).astype(np.uint8)
+            # Convert from BCHW to HWC format and scale to 0-255
+            image = (image[0].transpose(1, 2, 0) * 255).astype(np.uint8)
 
-        # Convert to grayscale if needed
-        if len(image.shape) > 2:
-            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        else:
-            gray = image
+        # Convert to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY) if image.shape[2] == 3 else image
 
         if method == "laplacian":
             # Laplacian variance method
             laplacian = cv2.Laplacian(gray, cv2.CV_64F)
-            focus_map = cv2.magnitude(laplacian, laplacian)
+            focus_map = np.abs(laplacian)
 
         elif method == "sobel":
             # Sobel method
@@ -58,7 +53,7 @@ class FocusMaskExtractor:
             focus_map = cv2.GaussianBlur(focus_map, (blur_size, blur_size), 0)
 
         # Normalize to 0-1 range
-        focus_map = cv2.normalize(focus_map, None, 0, 1, cv2.NORM_MINMAX)
+        focus_map = (focus_map - focus_map.min()) / (focus_map.max() - focus_map.min() + 1e-8)
 
         # Convert back to torch tensor format for ComfyUI
         focus_map = torch.from_numpy(focus_map).float()
