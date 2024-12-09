@@ -48,14 +48,15 @@ open the terminal in your custom_nodes/ComfyUI_FocusMask folder, and input:
 
 ## Use Cases
 Focus Outline:
-Visualizing focus fall-off in images
-Detecting focus transitions
-Creating artistic edge effects based on focus
-Analyzing lens characteristics
+- Visualizing focus fall-off in images
+- Detecting focus transitions
+- Creating artistic edge effects based on focus
+- Analyzing lens characteristics
+- Using it as a controlnet for upscaling / detailing processes
 
 Focus Mask:
-Isolating in-focus subjects
-Creating masks for selective editing
-Depth estimation assistance
-Focus stacking preparation
-Quality control for image sharpness
+- Isolating in-focus subjects
+- Creating masks for selective editing
+- Depth estimation assistance
+- Focus stacking preparation
+- Quality control for image sharpness
