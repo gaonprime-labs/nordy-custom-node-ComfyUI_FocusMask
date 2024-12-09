@@ -37,7 +37,7 @@ Parameters:
 - cd custom_nodes
 - git clone https://github.com/risunobushi/ComfyUI_FocusMask.git
 3. Install requirements:
-open the terminal, and input:
+open the terminal in your custom_nodes/ComfyUI_FocusMask folder, and input:
 - pip install -r requirements.txt
 4. Restart ComfyUI
 
